@@ -26,6 +26,7 @@ class Dataset(data.Dataset):
 
         self.top_label_path = path + "/label_2/"
         self.top_img_path = path + "/image_2/"
+        self.top_rimg_path = path + "/image_3/"
         self.top_calib_path = path + "/calib/"
         # use a relative path instead?
 
@@ -73,6 +74,7 @@ class Dataset(data.Dataset):
         # hold one image at a time
         self.curr_id = ""
         self.curr_img = None
+        self.curr_rimg = None
 
 
     # should return (Input, Label)
@@ -83,12 +85,15 @@ class Dataset(data.Dataset):
         if id != self.curr_id:
             self.curr_id = id
             self.curr_img = cv2.imread(self.top_img_path + '%s.png'%id)
+            self.curr_rimg = cv2.imread(self.top_rimg_path + '%s.png'%id)
 
         label = self.labels[id][str(line_num)]
         # P doesn't matter here
-        obj = DetectedObject(self.curr_img, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
-
-        return obj.img, label
+        objl = DetectedObject(self.curr_img, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
+        objr = DetectedObject(self.curr_rimg, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
+        cat_image = torch.cat([objl.img,objr.img],dim=-2)
+        #print(cat_image.shape)
+        return cat_image, label
 
     def __len__(self):
         return len(self.object_list)
