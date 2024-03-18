@@ -14,7 +14,7 @@ import os
 def main():
 
     # hyper parameters
-    epochs = 100
+    epochs = 20
     batch_size = 8
     alpha = 0.6
     w = 0.4
@@ -25,8 +25,8 @@ def main():
     dataset = Dataset(train_path)
 
     params = {'batch_size': batch_size,
-              'shuffle': True,
-              'num_workers': 6}
+              'shuffle': True,}
+              #'num_workers': 6}
 
     generator = data.DataLoader(dataset, **params)
 
