@@ -26,7 +26,7 @@ class Dataset(data.Dataset):
 
         self.top_label_path = path + "/label_2/"
         self.top_img_path = path + "/image_2/"
-        self.top_rimg_path = path + "/image_3/"
+        self.top_previmg_path = path + "/prev_2/"
         self.top_calib_path = path + "/calib/"
         # use a relative path instead?
 
@@ -74,7 +74,7 @@ class Dataset(data.Dataset):
         # hold one image at a time
         self.curr_id = ""
         self.curr_img = None
-        self.curr_rimg = None
+        self.curr_previmgs = None
 
 
     # should return (Input, Label)
@@ -85,13 +85,13 @@ class Dataset(data.Dataset):
         if id != self.curr_id:
             self.curr_id = id
             self.curr_img = cv2.imread(self.top_img_path + '%s.png'%id)
-            self.curr_rimg = cv2.imread(self.top_rimg_path + '%s.png'%id)
+            self.curr_previmgs = [cv2.imread(self.top_previmg_path + f'{id}_{i:02d}.png') for i in range(1,4)]
 
         label = self.labels[id][str(line_num)]
         # P doesn't matter here
-        objl = DetectedObject(self.curr_img, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
-        objr = DetectedObject(self.curr_rimg, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
-        cat_image = torch.cat([objl.img,objr.img],dim=-2)
+        objcurr = DetectedObject(self.curr_img, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
+        objprevs = [DetectedObject(im, label['Class'], label['Box_2D'], self.proj_matrix, label=label) for im in self.curr_previmgs]
+        cat_image = torch.cat([objcurr.img,*[obj.img for obj in objprevs]],dim=-2)
         #print(cat_image.shape)
         return cat_image, label
 

@@ -26,7 +26,7 @@ class Model(nn.Module):
         self.w = w
         self.features = features
         self.orientation = nn.Sequential(
-                    nn.Linear(512 * 14 * 7, 256),
+                    nn.Linear(512 * 28 * 7, 256),
                     nn.ReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, 256),
@@ -35,7 +35,7 @@ class Model(nn.Module):
                     nn.Linear(256, bins*2) # to get sin and cos
                 )
         self.confidence = nn.Sequential(
-                    nn.Linear(512 * 14 * 7, 256),
+                    nn.Linear(512 * 28 * 7, 256),
                     nn.ReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, 256),
@@ -46,7 +46,7 @@ class Model(nn.Module):
                     #nn.Sigmoid()
                 )
         self.dimension = nn.Sequential(
-                    nn.Linear(512 * 14 * 7, 512),
+                    nn.Linear(512 * 28 * 7, 512),
                     nn.ReLU(True),
                     nn.Dropout(),
                     nn.Linear(512, 512),
@@ -57,7 +57,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         x = self.features(x) # 512 x 7 x 7
-        x = x.view(-1, 512 * 14 * 7)
+        x = x.view(-1, 512 * 28 * 7)
         orientation = self.orientation(x)
         orientation = orientation.view(-1, self.bins, 2)
         orientation = F.normalize(orientation, dim=2)
