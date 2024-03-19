@@ -14,7 +14,7 @@ import os
 def main():
 
     # hyper parameters
-    epochs = 20
+    epochs = 30
     batch_size = 8
     alpha = 0.6
     w = 0.4
