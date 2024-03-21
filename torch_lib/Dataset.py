@@ -4,6 +4,7 @@ import os
 import random
 
 import torch
+import glob
 from torchvision import transforms
 from torch.utils import data
 
@@ -33,7 +34,9 @@ class Dataset(data.Dataset):
         # TODO: which camera cal to use, per frame or global one?
         self.proj_matrix = get_P(os.path.abspath(os.path.dirname(os.path.dirname(__file__)) + '/camera_cal/calib_cam_to_cam.txt'))
 
-        self.ids = [x.split('.')[0] for x in sorted(os.listdir(self.top_img_path))] # name of file
+        self.ids = [os.path.basename(x).split('.')[0].split('_')[0] for x in sorted(glob.glob(self.top_previmg_path + '*[0-8]_03.png'))] # name of file
+        print("Glob is:", self.top_previmg_path + '*[0-8]_03.png')
+        print("ID Example:", self.ids[0], "Total Ids is", len(self.ids))
         self.num_images = len(self.ids)
 
         # create angle bins
@@ -85,7 +88,7 @@ class Dataset(data.Dataset):
         if id != self.curr_id:
             self.curr_id = id
             self.curr_img = cv2.imread(self.top_img_path + '%s.png'%id)
-            self.curr_previmgs = [cv2.imread(self.top_previmg_path + f'{id}_{i:02d}.png') for i in range(1,4)]
+            self.curr_previmgs = [cv2.imread(self.top_previmg_path + f'{id}_{i:02d}.png') for i in range(1,3)]
 
         label = self.labels[id][str(line_num)]
         # P doesn't matter here
