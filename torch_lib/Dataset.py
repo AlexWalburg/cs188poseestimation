@@ -23,19 +23,24 @@ def generate_bins(bins):
     return angle_bins
 
 class Dataset(data.Dataset):
-    def __init__(self, path, bins=2, overlap=0.1):
+    def __init__(self, path, bins=2, overlap=0.1,mode='train'):
 
         self.top_label_path = path + "/label_2/"
         self.top_img_path = path + "/image_2/"
         self.top_previmg_path = path + "/prev_2/"
+        self.top_rimg_path = path + "/image_3/"
+        self.top_prevrimg_path = path + "/prev_3/"
         self.top_calib_path = path + "/calib/"
         # use a relative path instead?
 
         # TODO: which camera cal to use, per frame or global one?
         self.proj_matrix = get_P(os.path.abspath(os.path.dirname(os.path.dirname(__file__)) + '/camera_cal/calib_cam_to_cam.txt'))
-
-        self.ids = [os.path.basename(x).split('.')[0].split('_')[0] for x in sorted(glob.glob(self.top_previmg_path + '*[0-8]_03.png'))] # name of file
+        if mode=='val':
+            self.ids = [os.path.basename(x).split('.')[0].split('_')[0] for x in sorted(glob.glob(self.top_previmg_path + '*9_03.png'))] # name of file
+        else:
+            self.ids = [os.path.basename(x).split('.')[0].split('_')[0] for x in sorted(glob.glob(self.top_previmg_path + '*[0-8]_03.png'))] # name of file
         print("Glob is:", self.top_previmg_path + '*[0-8]_03.png')
+        print("Total Ids is",len(self.ids))
         print("ID Example:", self.ids[0], "Total Ids is", len(self.ids))
         self.num_images = len(self.ids)
 
@@ -78,6 +83,8 @@ class Dataset(data.Dataset):
         self.curr_id = ""
         self.curr_img = None
         self.curr_previmgs = None
+        self.curr_rimg = None
+        self.curr_prevrimgs = None
 
 
     # should return (Input, Label)
@@ -88,13 +95,20 @@ class Dataset(data.Dataset):
         if id != self.curr_id:
             self.curr_id = id
             self.curr_img = cv2.imread(self.top_img_path + '%s.png'%id)
-            self.curr_previmgs = [cv2.imread(self.top_previmg_path + f'{id}_{i:02d}.png') for i in range(1,3)]
+            self.curr_previmgs = [cv2.imread(self.top_previmg_path + f'{id}_{i:02d}.png') for i in range(1,4)]
+            self.curr_rimg = cv2.imread(self.top_rimg_path + '%s.png'%id)
+            self.curr_prevrimgs = [cv2.imread(self.top_prevrimg_path + f'{id}_{i:02d}.png') for i in range(1,4)]
+
 
         label = self.labels[id][str(line_num)]
         # P doesn't matter here
         objcurr = DetectedObject(self.curr_img, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
         objprevs = [DetectedObject(im, label['Class'], label['Box_2D'], self.proj_matrix, label=label) for im in self.curr_previmgs]
-        cat_image = torch.cat([objcurr.img,*[obj.img for obj in objprevs]],dim=-2)
+        objcurr_r =DetectedObject(self.curr_rimg, label['Class'], label['Box_2D'], self.proj_matrix, label=label)
+        objprevs_r = [DetectedObject(im, label['Class'], label['Box_2D'], self.proj_matrix, label=label) for im in self.curr_prevrimgs]
+        cat_image_l = torch.cat([objcurr.img,*[obj.img for obj in objprevs]],dim=-2)
+        cat_image_r = torch.cat([objcurr_r.img,*[obj.img for obj in objprevs_r]],dim=-2)
+        cat_image = torch.cat([cat_image_l,cat_image_r],dim=-1)
         #print(cat_image.shape)
         return cat_image, label
 
